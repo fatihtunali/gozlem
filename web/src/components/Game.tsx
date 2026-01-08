@@ -226,6 +226,12 @@ export default function Game() {
 
   // Playing state
   if (phase === 'playing' && prompt) {
+    // Calculate image index based on step (25 images per category, cycling)
+    const step = session?.state.step ?? 0;
+    const imageIndex = (step % 25) + 1;
+    const imageNum = String(imageIndex).padStart(3, '0');
+    const imagePath = `/images/prompts/${prompt.category}/${prompt.category}_${imageNum}.png`;
+
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
         <div className="max-w-md w-full">
@@ -233,6 +239,20 @@ export default function Game() {
             <span className="text-gray-600 text-xs uppercase tracking-wider">
               {prompt.category}
             </span>
+          </div>
+
+          {/* Category Image */}
+          <div className="relative w-full aspect-square mb-8 rounded-lg overflow-hidden bg-gray-900">
+            <img
+              src={imagePath}
+              alt={prompt.category}
+              className="w-full h-full object-cover opacity-80 transition-opacity duration-500"
+              onError={(e) => {
+                // Hide image if not found
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
           </div>
 
           <h2 className="text-2xl text-center mb-12 font-light">
