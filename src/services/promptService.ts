@@ -1,4 +1,4 @@
-import { PROMPT_BANK, CATEGORY_ORDER } from '../data/prompts.js';
+import { PROMPT_BANK, CATEGORY_ORDER } from '../data/prompts/index.js';
 import type { Prompt, SessionState, PromptCategory } from '../types/index.js';
 
 export function getNextPrompt(sessionId: string, state: SessionState): Prompt {
