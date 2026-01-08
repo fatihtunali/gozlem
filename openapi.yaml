@@ -1,0 +1,613 @@
+openapi: 3.0.3
+info:
+  title: Gozlem Game API
+  version: 1.0.0
+  description: |
+    Minimal "choice -> ambiguous feedback -> memory" oyun API'si.
+
+    Akış:
+      1) POST /v1/sessions  (oyun oturumu aç)
+      2) GET  /v1/prompts/next?sessionId=... (sonraki prompt)
+      3) POST /v1/choices   (seçim gönder -> feedback + yeni state)
+
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local
+
+tags:
+  - name: Sessions
+  - name: Prompts
+  - name: Choices
+  - name: Analytics
+  - name: System
+
+paths:
+  /v1/sessions:
+    post:
+      tags: [Sessions]
+      summary: Yeni oyun oturumu (session) oluştur
+      description: |
+        Oyuncu kimliği opsiyonel (anonymous oynanabilir).
+        clientFingerprint gibi bir değer gönderirsen cihaz bazlı tutarlılık sağlayabilirsin.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+            examples:
+              anonymous:
+                value:
+                  locale: tr
+                  clientFingerprint: "fp_7d3a2..."
+                  metadata:
+                    platform: web
+                    appVersion: "0.1.0"
+      responses:
+        '201':
+          description: Session oluşturuldu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /v1/sessions/{sessionId}:
+    get:
+      tags: [Sessions]
+      summary: Session detayını getir
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/prompts/next:
+    get:
+      tags: [Prompts]
+      summary: Session için bir sonraki prompt'u getir
+      parameters:
+        - name: sessionId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: locale
+          in: query
+          required: false
+          schema:
+            type: string
+            default: tr
+      responses:
+        '200':
+          description: Next prompt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prompt'
+              examples:
+                example1:
+                  value:
+                    id: "prm_001"
+                    sessionId: "2f2edc1d-1c51-4d68-9b2f-7a9cda2a2c0f"
+                    kind: choice
+                    category: time
+                    text: "Şu anda ilerlemek için bir şey seçmelisin."
+                    choices:
+                      - id: "now"
+                        label: "Şimdi"
+                      - id: "later"
+                        label: "Biraz Sonra"
+                      - id: "none"
+                        label: "Hiçbiri"
+                    expiresAt: "2026-01-08T14:00:00Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/choices:
+    post:
+      tags: [Choices]
+      summary: Oyuncunun seçimini kaydet ve feedback üret
+      description: |
+        İstemci her choice gönderiminde idempotency key gönderebilir (Idempotency-Key header).
+        Böylece aynı tıklama 2 kez gelirse tek kayıt olur.
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitChoiceRequest'
+            examples:
+              ex:
+                value:
+                  sessionId: "2f2edc1d-1c51-4d68-9b2f-7a9cda2a2c0f"
+                  promptId: "prm_001"
+                  choiceId: "later"
+                  clientTs: "2026-01-08T13:05:12Z"
+      responses:
+        '200':
+          description: Choice işlendi, feedback döndü
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChoiceResult'
+              examples:
+                ex1:
+                  value:
+                    eventId: "evt_9b4f7b2c"
+                    sessionId: "2f2edc1d-1c51-4d68-9b2f-7a9cda2a2c0f"
+                    promptId: "prm_001"
+                    choiceId: "later"
+                    feedback:
+                      tone: neutral
+                      text: "Bu karar genelde daha sonra verilir."
+                      socialHint: "Bugün senin gibi düşünen 418 kişi vardı."
+                      flags:
+                        patternDetected: false
+                    state:
+                      step: 1
+                      streak:
+                        sameChoice: 1
+                      lastChoiceId: "later"
+                    milestoneTriggered: null
+                ex2_milestone:
+                  value:
+                    eventId: "evt_a1b2c3d4"
+                    sessionId: "2f2edc1d-1c51-4d68-9b2f-7a9cda2a2c0f"
+                    promptId: "prm_007"
+                    choiceId: "now"
+                    feedback:
+                      tone: curious
+                      text: "Yedinci adım. Sistem seni dinliyor."
+                      socialHint: null
+                      flags:
+                        patternDetected: true
+                    state:
+                      step: 7
+                      streak:
+                        sameChoice: 2
+                      lastChoiceId: "now"
+                    milestoneTriggered: "revelation_7"
+        '409':
+          description: Idempotency çakışması (aynı key farklı payload ile geldi)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                conflict:
+                  value:
+                    code: "IDEMPOTENCY_CONFLICT"
+                    message: "Same idempotency key used with different request payload."
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sessions/{sessionId}/timeline:
+    get:
+      tags: [Analytics]
+      summary: Session içi olaylar (event timeline)
+      description: |
+        Debug / admin amaçlı kullanılabilir.
+        Prod'da oyuncuya tüm geçmişi açmak istemezsen bu endpoint'i kapatırsın.
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+      responses:
+        '200':
+          description: Timeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sessions/{sessionId}/revelation:
+    get:
+      tags: [Analytics]
+      summary: Session için ayna raporu (revelation)
+      description: |
+        Oyuncunun o ana kadarki seçimlerinden çıkarılan gözlem raporu.
+        Belirli eşiklerde (7, 21, 60 seçim) tetiklenir.
+        Eşiğe ulaşılmadan çağrılırsa 404 döner (REVELATION_NOT_READY).
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Revelation raporu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Revelation'
+              examples:
+                revelation_7:
+                  value:
+                    sessionId: "2f2edc1d-1c51-4d68-9b2f-7a9cda2a2c0f"
+                    milestone: "revelation_7"
+                    totalChoices: 7
+                    observations:
+                      - key: "pressure_response"
+                        text: "Sıkıştırılınca %78 bekliyorsun."
+                        confidence: 0.78
+                      - key: "curiosity"
+                        text: "Bilmediğin şeyleri öğrenmekten kaçınmıyorsun."
+                        confidence: 0.65
+                    comparison:
+                      text: "İnsanların %9'u senin kadar tutarlı."
+                      percentile: 91
+                    systemAccuracy: 0.62
+        '404':
+          description: Not found veya revelation henüz hazır değil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                not_ready:
+                  value:
+                    code: "REVELATION_NOT_READY"
+                    message: "Henüz yeterli seçim yapılmadı."
+                    details:
+                      currentStep: 4
+                      nextMilestone: 7
+
+  /v1/health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  ok:
+                    type: boolean
+                  ts:
+                    type: string
+                    format: date-time
+                required: [ok, ts]
+              examples:
+                ok:
+                  value:
+                    ok: true
+                    ts: "2026-01-08T13:00:00Z"
+
+components:
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Same request retry safety. Use a UUID.
+      schema:
+        type: string
+        maxLength: 128
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            bad:
+              value:
+                code: "BAD_REQUEST"
+                message: "Invalid payload."
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            nf:
+              value:
+                code: "NOT_FOUND"
+                message: "Resource not found."
+
+  schemas:
+    CreateSessionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        locale:
+          type: string
+          description: UI dili
+          default: tr
+        clientFingerprint:
+          type: string
+          description: Anonymous cihaz kimliği (hash önerilir)
+          maxLength: 256
+        metadata:
+          type: object
+          description: Key-value metadata
+          additionalProperties: true
+
+    Session:
+      type: object
+      additionalProperties: false
+      required: [id, createdAt, locale, state]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        locale:
+          type: string
+        state:
+          $ref: '#/components/schemas/SessionState'
+
+    SessionState:
+      type: object
+      additionalProperties: false
+      required: [step, streak]
+      properties:
+        step:
+          type: integer
+          minimum: 0
+          description: Kaçıncı seçim/hamle
+        lastChoiceId:
+          type: string
+          nullable: true
+        streak:
+          type: object
+          additionalProperties: false
+          required: [sameChoice]
+          properties:
+            sameChoice:
+              type: integer
+              minimum: 0
+
+    Prompt:
+      type: object
+      additionalProperties: false
+      required: [id, sessionId, kind, category, text, choices]
+      properties:
+        id:
+          type: string
+          description: Prompt id (string)
+        sessionId:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum: [choice]
+        category:
+          type: string
+          enum: [time, curiosity, risk, control, sacrifice, pattern, memory]
+          description: Prompt'un psikolojik kategorisi
+        text:
+          type: string
+          maxLength: 500
+        choices:
+          type: array
+          minItems: 2
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/ChoiceOption'
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ChoiceOption:
+      type: object
+      additionalProperties: false
+      required: [id, label]
+      properties:
+        id:
+          type: string
+          maxLength: 40
+          description: choice id (örn: now/later/none)
+        label:
+          type: string
+          maxLength: 80
+
+    SubmitChoiceRequest:
+      type: object
+      additionalProperties: false
+      required: [sessionId, promptId, choiceId]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        promptId:
+          type: string
+        choiceId:
+          type: string
+        clientTs:
+          type: string
+          format: date-time
+          nullable: true
+
+    ChoiceResult:
+      type: object
+      additionalProperties: false
+      required: [eventId, sessionId, promptId, choiceId, feedback, state, milestoneTriggered]
+      properties:
+        eventId:
+          type: string
+          description: Event id
+        sessionId:
+          type: string
+          format: uuid
+        promptId:
+          type: string
+        choiceId:
+          type: string
+        feedback:
+          $ref: '#/components/schemas/Feedback'
+        state:
+          $ref: '#/components/schemas/SessionState'
+        milestoneTriggered:
+          type: string
+          nullable: true
+          enum: [revelation_7, revelation_21, revelation_60]
+          description: Bu seçimle tetiklenen milestone (varsa)
+
+    Feedback:
+      type: object
+      additionalProperties: false
+      required: [tone, text, socialHint, flags]
+      properties:
+        tone:
+          type: string
+          enum: [neutral, curious, unsettling]
+        text:
+          type: string
+          maxLength: 300
+          description: Belirsiz/yorumlu geri bildirim
+        socialHint:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Görünmez sosyal kıyas mesajı
+        flags:
+          type: object
+          additionalProperties: false
+          required: [patternDetected]
+          properties:
+            patternDetected:
+              type: boolean
+
+    Timeline:
+      type: object
+      additionalProperties: false
+      required: [sessionId, events]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineEvent'
+
+    TimelineEvent:
+      type: object
+      additionalProperties: false
+      required: [id, ts, promptId, choiceId, feedbackText]
+      properties:
+        id:
+          type: string
+        ts:
+          type: string
+          format: date-time
+        promptId:
+          type: string
+        choiceId:
+          type: string
+        feedbackText:
+          type: string
+
+    Revelation:
+      type: object
+      additionalProperties: false
+      required: [sessionId, milestone, totalChoices, observations, systemAccuracy]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        milestone:
+          type: string
+          enum: [revelation_7, revelation_21, revelation_60]
+        totalChoices:
+          type: integer
+          minimum: 1
+        observations:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/Observation'
+        comparison:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Comparison'
+        systemAccuracy:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    Observation:
+      type: object
+      additionalProperties: false
+      required: [key, text, confidence]
+      properties:
+        key:
+          type: string
+          maxLength: 50
+        text:
+          type: string
+          maxLength: 200
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    Comparison:
+      type: object
+      additionalProperties: false
+      required: [text, percentile]
+      properties:
+        text:
+          type: string
+          maxLength: 150
+        percentile:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
