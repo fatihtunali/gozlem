@@ -286,13 +286,9 @@ async function main() {
 
       // Skip if file already exists
       if (fs.existsSync(filepath)) {
-        const stats = fs.statSync(filepath);
-        // Skip only if file is larger than 10KB (real image, not placeholder)
-        if (stats.size > 10000) {
-          console.log(`   ⏭️  ${filename} already exists, skipping`);
-          totalGenerated++;
-          continue;
-        }
+        console.log(`   ⏭️  ${filename} already exists, skipping`);
+        totalGenerated++;
+        continue;
       }
 
       const imageUrl = await generateImage(openai, prompt, category, i + 1);
