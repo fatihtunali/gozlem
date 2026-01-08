@@ -1,6 +1,7 @@
 {
   "name": "gozlem-api",
   "version": "1.0.0",
+  "type": "module",
   "description": "Gozlem Game API - choice -> ambiguous feedback -> memory",
   "main": "dist/index.js",
   "scripts": {
