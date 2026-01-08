@@ -244,7 +244,6 @@ export default function Game() {
               <button
                 key={choice.id}
                 onClick={() => handleChoice(choice.id)}
-                disabled={phase === 'loading'}
                 className="w-full py-4 border border-gray-700 rounded text-left px-6 hover:border-white hover:bg-gray-900 transition disabled:opacity-50"
               >
                 {choice.label}
