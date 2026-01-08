@@ -11,9 +11,9 @@ info:
       3) POST /v1/choices   (seçim gönder -> feedback + yeni state)
 
 servers:
-  - url: https://api.example.com
+  - url: https://haydihepberaber.com
     description: Production
-  - url: http://localhost:3000
+  - url: http://localhost:4001
     description: Local
 
 tags:
