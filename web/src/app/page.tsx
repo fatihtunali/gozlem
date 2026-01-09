@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
-import AdBanner from '@/components/AdBanner';
+
+// Lazy load AdBanner for better initial load performance
+const AdBanner = lazy(() => import('@/components/AdBanner'));
 
 interface Truth {
   id: string;
@@ -375,7 +377,10 @@ export default function Home() {
     return `${Math.floor(seconds / 604800)}h önce`;
   };
 
-  const getCategoryInfo = (cat: string) => CATEGORIES.find(c => c.id === cat) || CATEGORIES[1];
+  // Memoized category lookup
+  const getCategoryInfo = useCallback((cat: string) => {
+    return CATEGORIES.find(c => c.id === cat) || CATEGORIES[1];
+  }, []);
 
   // Render content with clickable hashtags
   const renderContentWithHashtags = (content: string) => {
@@ -401,7 +406,8 @@ export default function Home() {
     });
   };
 
-  const displayTruths = searchResults || truths;
+  // Memoized display truths to prevent unnecessary re-renders
+  const displayTruths = useMemo(() => searchResults || truths, [searchResults, truths]);
 
   return (
     <div className="min-h-screen overflow-x-hidden transition-colors duration-300 bg-[var(--background)] text-[var(--foreground)]">
@@ -858,9 +864,11 @@ export default function Home() {
 
                 {/* Show ad banner every 5 confessions */}
                 {showAdAfter && (
-                  <div className="my-3">
-                    <AdBanner type={index % 10 === 4 ? 'native' : 'banner'} />
-                  </div>
+                  <Suspense fallback={<div className="my-3 h-24 glass-card rounded-xl animate-pulse" />}>
+                    <div className="my-3">
+                      <AdBanner type={index % 10 === 4 ? 'native' : 'banner'} />
+                    </div>
+                  </Suspense>
                 )}
                 </div>
               );
