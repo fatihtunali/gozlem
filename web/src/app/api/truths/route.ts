@@ -46,8 +46,9 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured') === 'true';
     const random = searchParams.get('random') === 'true';
 
-    let orderBy = 'created_at DESC';
-    if (sort === 'top') orderBy = 'me_too_count DESC, created_at DESC';
+    // Boosted confessions come first, then sort by the selected order
+    let orderBy = '(is_boosted = true AND boost_ends_at > NOW()) DESC, created_at DESC';
+    if (sort === 'top') orderBy = '(is_boosted = true AND boost_ends_at > NOW()) DESC, me_too_count DESC, created_at DESC';
     if (random) orderBy = 'RANDOM()';
 
     let whereClause = 'is_visible = true';
@@ -68,7 +69,9 @@ export async function GET(request: NextRequest) {
 
     const [truthsResult, countResult, statsResult] = await Promise.all([
       pool.query(
-        `SELECT id, content, category, me_too_count, COALESCE(hug_count, 0) as hug_count, created_at, is_featured
+        `SELECT id, content, category, me_too_count, COALESCE(hug_count, 0) as hug_count, created_at, is_featured,
+                COALESCE(is_boosted, false) as is_boosted, boost_ends_at,
+                (is_boosted = true AND boost_ends_at > NOW()) as is_currently_boosted
          FROM truths
          WHERE ${whereClause}
          ORDER BY ${orderBy}

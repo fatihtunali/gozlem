@@ -10,6 +10,8 @@ interface Truth {
   hug_count: number;
   created_at: string;
   is_featured?: boolean;
+  is_currently_boosted?: boolean;
+  boost_ends_at?: string;
   hasVoted?: boolean;
   hasHugged?: boolean;
   isNew?: boolean;
@@ -613,7 +615,16 @@ export default function Home() {
                   {isTopToday && (
                     <div className="flex items-center gap-2 mb-3">
                       <span className="px-2 py-0.5 rounded-full text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                        🔥 Günün İtirafı
+                        Gunun Itirafi
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Boosted badge */}
+                  {truth.is_currently_boosted && (
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
+                        One Cikarildi
                       </span>
                     </div>
                   )}
@@ -651,6 +662,15 @@ export default function Home() {
                         <span>📤</span>
                         <span className="text-xs font-medium">Paylaş</span>
                       </button>
+
+                      {/* Boost button */}
+                      <a
+                        href={`/boost?id=${truth.id}&content=${encodeURIComponent(truth.content.slice(0, 100))}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-gradient-to-r from-amber-600/20 to-orange-600/20 text-amber-300 hover:from-amber-600/30 hover:to-orange-600/30 border border-amber-500/20 hover:border-amber-500/40 transition-all"
+                      >
+                        <span>🚀</span>
+                        <span className="text-xs font-medium">One Cikar</span>
+                      </a>
                     </div>
 
                     {/* Right actions */}
