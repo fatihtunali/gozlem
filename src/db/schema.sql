@@ -38,3 +38,31 @@ CREATE TABLE IF NOT EXISTS idempotency_keys (
 );
 
 CREATE INDEX IF NOT EXISTS idx_idempotency_created ON idempotency_keys(created_at);
+
+-- ============================================
+-- İtiraf Duvarı (Confession Wall) Tables
+-- ============================================
+
+-- Truths/Confessions table
+CREATE TABLE IF NOT EXISTS truths (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content TEXT NOT NULL,
+  me_too_count INTEGER NOT NULL DEFAULT 0,
+  ip_hash VARCHAR(64),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  is_visible BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_truths_created ON truths(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_truths_me_too ON truths(me_too_count DESC);
+
+-- Me too votes (to prevent duplicate voting)
+CREATE TABLE IF NOT EXISTS me_too_votes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  truth_id UUID NOT NULL REFERENCES truths(id) ON DELETE CASCADE,
+  voter_hash VARCHAR(64) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(truth_id, voter_hash)
+);
+
+CREATE INDEX IF NOT EXISTS idx_me_too_truth ON me_too_votes(truth_id);
