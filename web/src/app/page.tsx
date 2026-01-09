@@ -901,9 +901,15 @@ export default function Home() {
         {/* Footer */}
         <footer className="text-center pb-8 text-gray-600 text-sm space-y-2">
           <p>Burada herkes anonim. Yargılama yok.</p>
-          <a href="/hafta" className="text-purple-400 hover:text-purple-300 transition-colors">
-            📊 Haftalık Özet
-          </a>
+          <div className="flex items-center justify-center gap-4">
+            <a href="/hafta" className="text-purple-400 hover:text-purple-300 transition-colors">
+              📊 Haftalik Ozet
+            </a>
+            <span className="text-gray-700">|</span>
+            <a href="/premium" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1">
+              👑 Premium
+            </a>
+          </div>
         </footer>
       </div>
 

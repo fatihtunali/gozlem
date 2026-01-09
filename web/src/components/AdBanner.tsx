@@ -10,14 +10,31 @@ interface AdBannerProps {
 
 export default function AdBanner({ slot, className = '', type = 'banner' }: AdBannerProps) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
+    // Check if user is premium
+    const premiumStatus = localStorage.getItem('isPremium');
+    const premiumExpiry = localStorage.getItem('premiumExpiry');
+
+    if (premiumStatus === 'true' && premiumExpiry) {
+      const expiryDate = new Date(premiumExpiry);
+      if (expiryDate > new Date()) {
+        setIsPremium(true);
+      } else {
+        // Premium expired, clear local storage
+        localStorage.removeItem('isPremium');
+        localStorage.removeItem('premiumExpiry');
+      }
+    }
+
     // Google AdSense initialization would go here
     // For now, show placeholder
     setIsLoaded(true);
   }, []);
 
-  if (!isLoaded) {
+  // Don't show ads to premium users
+  if (isPremium || !isLoaded) {
     return null;
   }
 
