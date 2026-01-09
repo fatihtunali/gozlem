@@ -646,9 +646,10 @@ export default function Home() {
                       {/* Share button */}
                       <button
                         onClick={() => handleShare(truth)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-gradient-to-r from-blue-600/20 to-cyan-600/20 text-cyan-300 hover:from-blue-600/30 hover:to-cyan-600/30 border border-cyan-500/20 hover:border-cyan-500/40 transition-all"
                       >
-                        📤
+                        <span>📤</span>
+                        <span className="text-xs font-medium">Paylaş</span>
                       </button>
                     </div>
 
