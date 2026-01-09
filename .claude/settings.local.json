@@ -6,7 +6,11 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(ssh root@142.93.136.228 \"su - gozlem -c ''cd ~/gozlem && git pull''\")",
-      "Bash(ssh root@142.93.136.228:*)"
+      "Bash(ssh root@142.93.136.228:*)",
+      "Bash(curl:*)",
+      "Bash(dir /a \"C:\\Users\\fatih\\Desktop\\gozlem\")",
+      "Bash(npm install:*)",
+      "Bash(git reset:*)"
     ]
   }
 }
