@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
+import AdBanner from '@/components/AdBanner';
 
 interface Truth {
   id: string;
@@ -695,10 +696,11 @@ export default function Home() {
               const isVoting = votingId === truth.id;
               const isHugging = huggingId === truth.id;
               const isTopToday = index === 0 && sortBy === 'top' && !searchResults;
+              const showAdAfter = (index + 1) % 5 === 0; // Show ad every 5th confession
 
               return (
+                <div key={truth.id}>
                 <div
-                  key={truth.id}
                   className={`glass-card rounded-2xl p-5 transition-all duration-500 ${
                     truth.isNew ? 'animate-slide-in ring-1 ring-purple-500/30' : ''
                   } ${isVoting || isHugging ? 'scale-[1.01]' : ''} ${
@@ -852,6 +854,14 @@ export default function Home() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Show ad banner every 5 confessions */}
+                {showAdAfter && (
+                  <div className="my-3">
+                    <AdBanner type={index % 10 === 4 ? 'native' : 'banner'} />
+                  </div>
+                )}
                 </div>
               );
             })}
