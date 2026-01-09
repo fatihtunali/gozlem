@@ -10,7 +10,8 @@
       "Bash(curl:*)",
       "Bash(dir /a \"C:\\Users\\fatih\\Desktop\\gozlem\")",
       "Bash(npm install:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(scp:*)"
     ]
   }
 }
