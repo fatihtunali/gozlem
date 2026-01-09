@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import CookieConsent from "@/components/CookieConsent";
 
 // Viewport configuration (separated from metadata in Next.js 14+)
 export const viewport: Viewport = {
@@ -137,6 +138,7 @@ export default function RootLayout({
       <body className={`${geist.variable} font-sans antialiased`}>
         <ServiceWorkerRegistration />
         {children}
+        <CookieConsent />
       </body>
     </html>
   );
