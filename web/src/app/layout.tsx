@@ -121,6 +121,12 @@ export default function RootLayout({
     <html lang="tr" className="dark" suppressHydrationWarning>
       <head>
         <GoogleAnalytics />
+        {/* Google AdSense */}
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4657585697913814"
+          crossOrigin="anonymous"
+        />
         <link rel="canonical" href="https://haydihepberaber.com" />
         <link rel="alternate" hrefLang="tr" href="https://haydihepberaber.com" />
         <script
