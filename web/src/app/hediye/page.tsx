@@ -185,7 +185,7 @@ function GiftPageContent() {
             >
               <div className="text-3xl mb-2">{gift.emoji}</div>
               <div className="text-sm font-medium">{gift.name}</div>
-              <div className="text-xs text-gray-400 mt-1">{gift.price.toFixed(2)} TL</div>
+              <div className="text-xs text-gray-400 mt-1">{Number(gift.price).toFixed(2)} TL</div>
             </button>
           ))}
         </div>
@@ -300,7 +300,7 @@ function GiftPageContent() {
             ) : (
               <span className="flex items-center justify-center gap-2">
                 <span>{selectedGiftType?.emoji}</span>
-                <span>Hediye Gonder - {selectedGiftType?.price.toFixed(2)} TL</span>
+                <span>Hediye Gonder - {selectedGiftType ? Number(selectedGiftType.price).toFixed(2) : '0.00'} TL</span>
               </span>
             )}
           </button>
