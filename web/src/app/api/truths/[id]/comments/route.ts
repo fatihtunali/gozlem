@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import pool from '@/lib/db';
+import { sendCommentNotification } from '@/lib/email';
+import { moderateContent, shouldAutoHide } from '@/lib/moderation';
 
 function hashIP(ip: string): string {
   return createHash('sha256').update(ip + (process.env.IP_SALT || 'default-salt')).digest('hex').slice(0, 16);
@@ -69,6 +71,14 @@ export async function POST(
       return NextResponse.json({ error: 'Çok uzun (max 150)' }, { status: 400 });
     }
 
+    // AI Moderation check
+    const moderationResult = await moderateContent(content);
+    if (shouldAutoHide(moderationResult)) {
+      return NextResponse.json({
+        error: moderationResult.reason || 'Bu yorum yayin kurallarina uygun degil'
+      }, { status: 400 });
+    }
+
     const ipHash = hashIP(ip);
 
     const result = await pool.query(
@@ -77,6 +87,24 @@ export async function POST(
        RETURNING id, content, created_at`,
       [id, content, ipHash]
     );
+
+    // Send email notification if owner has enabled it
+    const truthResult = await pool.query(
+      `SELECT content, owner_email, secret_code, notify_comments
+       FROM truths WHERE id = $1`,
+      [id]
+    );
+
+    if (truthResult.rows[0]?.notify_comments && truthResult.rows[0]?.owner_email) {
+      const truth = truthResult.rows[0];
+      // Don't await - send in background
+      sendCommentNotification(
+        truth.owner_email,
+        truth.content,
+        content,
+        truth.secret_code
+      ).catch(err => console.error('Failed to send comment notification:', err));
+    }
 
     return NextResponse.json(result.rows[0], { status: 201 });
   } catch (error) {

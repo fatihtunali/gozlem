@@ -133,6 +133,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ boosts: boosts.rows });
     }
 
+    if (type === 'moderation') {
+      // Get pending moderation items (hidden truths that need review)
+      const [pendingTruths, pendingComments] = await Promise.all([
+        pool.query(`
+          SELECT id, content, category, created_at
+          FROM truths
+          WHERE is_visible = false
+          ORDER BY created_at DESC
+          LIMIT 50
+        `),
+        pool.query(`
+          SELECT c.id, c.content, c.created_at, t.content as truth_content
+          FROM comments c
+          LEFT JOIN truths t ON t.id = c.truth_id
+          WHERE c.is_visible = false
+          ORDER BY c.created_at DESC
+          LIMIT 50
+        `),
+      ]);
+
+      return NextResponse.json({
+        pendingTruths: pendingTruths.rows,
+        pendingComments: pendingComments.rows,
+      });
+    }
+
     return NextResponse.json({ error: 'Gecersiz istek tipi' }, { status: 400 });
   } catch (error) {
     console.error('[Admin] Error:', error);

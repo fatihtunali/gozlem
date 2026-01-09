@@ -8,6 +8,7 @@ interface Truth {
   category: string;
   me_too_count: number;
   hug_count: number;
+  gift_count: number;
   created_at: string;
   is_featured?: boolean;
   is_currently_boosted?: boolean;
@@ -71,6 +72,8 @@ export default function Home() {
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
   const [secretCodeModal, setSecretCodeModal] = useState<{ show: boolean; code: string; email: string }>({ show: false, code: '', email: '' });
   const [formEmail, setFormEmail] = useState('');
+  const [trendingHashtags, setTrendingHashtags] = useState<{ tag: string; usage_count: number }[]>([]);
+  const [activeHashtag, setActiveHashtag] = useState<string | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,6 +87,14 @@ export default function Home() {
       .catch(console.error);
   }, []);
 
+  // Fetch trending hashtags
+  useEffect(() => {
+    fetch('/api/hashtags?limit=8')
+      .then(res => res.json())
+      .then(data => setTrendingHashtags(data.hashtags || []))
+      .catch(console.error);
+  }, []);
+
   // Fetch truths
   const fetchTruths = useCallback(async (offset = 0, append = false) => {
     try {
@@ -91,7 +102,8 @@ export default function Home() {
       else setLoadingMore(true);
 
       const categoryParam = selectedCategory !== 'all' ? `&category=${selectedCategory}` : '';
-      const res = await fetch(`/api/truths?limit=20&offset=${offset}&sort=${sortBy}${categoryParam}`);
+      const hashtagParam = activeHashtag ? `&hashtag=${encodeURIComponent(activeHashtag)}` : '';
+      const res = await fetch(`/api/truths?limit=20&offset=${offset}&sort=${sortBy}${categoryParam}${hashtagParam}`);
       const data = await res.json();
 
       if (append) {
@@ -108,7 +120,7 @@ export default function Home() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [selectedCategory, sortBy]);
+  }, [selectedCategory, sortBy, activeHashtag]);
 
   useEffect(() => {
     setSearchResults(null);
@@ -363,6 +375,30 @@ export default function Home() {
 
   const getCategoryInfo = (cat: string) => CATEGORIES.find(c => c.id === cat) || CATEGORIES[1];
 
+  // Render content with clickable hashtags
+  const renderContentWithHashtags = (content: string) => {
+    const parts = content.split(/(#[a-zA-Z0-9çğıöşüÇĞİÖŞÜ_]+)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith('#')) {
+        const tag = part.slice(1).toLowerCase();
+        return (
+          <button
+            key={i}
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveHashtag(tag);
+              setSelectedCategory('all');
+            }}
+            className="text-purple-400 hover:text-purple-300 hover:underline transition-colors"
+          >
+            {part}
+          </button>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
+
   const displayTruths = searchResults || truths;
 
   return (
@@ -421,6 +457,40 @@ export default function Home() {
                   <div className="text-sm text-gray-500">{dailyTheme.description}</div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Trending hashtags */}
+        {trendingHashtags.length > 0 && !searchResults && (
+          <div className="mb-6 animate-fade-in">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-sm text-gray-500">🔥 Trend</span>
+              {activeHashtag && (
+                <button
+                  onClick={() => setActiveHashtag(null)}
+                  className="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                >
+                  <span>#{activeHashtag}</span>
+                  <span className="text-gray-500">✕</span>
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {trendingHashtags.map(h => (
+                <button
+                  key={h.tag}
+                  onClick={() => setActiveHashtag(activeHashtag === h.tag ? null : h.tag)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm transition-all duration-300 ${
+                    activeHashtag === h.tag
+                      ? 'bg-purple-500 text-white'
+                      : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                  }`}
+                >
+                  #{h.tag}
+                  <span className="ml-1 text-xs opacity-60">{h.usage_count}</span>
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -657,7 +727,7 @@ export default function Home() {
 
                   {/* Content */}
                   <p className="text-gray-100 text-lg leading-relaxed mb-4">
-                    {truth.content}
+                    {renderContentWithHashtags(truth.content)}
                   </p>
 
                   {/* Action buttons */}
@@ -680,6 +750,15 @@ export default function Home() {
                         <span>📤</span>
                         <span className="text-xs font-medium">Paylaş</span>
                       </button>
+
+                      {/* Gift button */}
+                      <a
+                        href={`/hediye?id=${truth.id}&content=${encodeURIComponent(truth.content.slice(0, 100))}`}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-gradient-to-r from-pink-600/20 to-purple-600/20 text-pink-300 hover:from-pink-600/30 hover:to-purple-600/30 border border-pink-500/20 hover:border-pink-500/40 transition-all"
+                      >
+                        <span>🎁</span>
+                        <span className="text-xs font-medium">{truth.gift_count > 0 ? truth.gift_count : 'Hediye'}</span>
+                      </a>
 
                       {/* Boost button */}
                       <a
