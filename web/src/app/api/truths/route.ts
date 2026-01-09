@@ -35,6 +35,16 @@ function isContentValid(content: string): { valid: boolean; reason?: string } {
   return { valid: true };
 }
 
+// Generate a random 8-character alphanumeric code
+function generateSecretCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluded confusing chars: I, O, 0, 1
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 // GET - List truths
 export async function GET(request: NextRequest) {
   try {
@@ -118,19 +128,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const content = body.content?.trim();
     const category = CATEGORIES.includes(body.category) ? body.category : 'itiraf';
+    const email = body.email?.trim() || null;
 
     const validation = isContentValid(content);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.reason }, { status: 400 });
     }
 
+    // Validate email if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'Gecersiz e-posta adresi' }, { status: 400 });
+    }
+
     const ipHash = hashIP(ip);
+    const secretCode = generateSecretCode();
 
     const result = await pool.query(
-      `INSERT INTO truths (content, category, ip_hash)
-       VALUES ($1, $2, $3)
-       RETURNING id, content, category, me_too_count, created_at`,
-      [content, category, ipHash]
+      `INSERT INTO truths (content, category, ip_hash, secret_code, owner_email, notify_comments)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, content, category, me_too_count, created_at, secret_code`,
+      [content, category, ipHash, secretCode, email, email ? true : false]
     );
 
     return NextResponse.json(result.rows[0], { status: 201 });

@@ -69,6 +69,8 @@ export default function Home() {
   const [dailyTheme, setDailyTheme] = useState<DailyTheme | null>(null);
   const [newComment, setNewComment] = useState<{ [key: string]: string }>({});
   const [submittingComment, setSubmittingComment] = useState<string | null>(null);
+  const [secretCodeModal, setSecretCodeModal] = useState<{ show: boolean; code: string; email: string }>({ show: false, code: '', email: '' });
+  const [formEmail, setFormEmail] = useState('');
   const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -186,7 +188,11 @@ export default function Home() {
       const res = await fetch('/api/truths', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newTruth.trim(), category: formCategory }),
+        body: JSON.stringify({
+          content: newTruth.trim(),
+          category: formCategory,
+          email: formEmail.trim() || null
+        }),
       });
 
       if (res.ok) {
@@ -195,8 +201,9 @@ export default function Home() {
         setStats(prev => ({ ...prev, totalTruths: prev.totalTruths + 1 }));
         setNewTruth('');
         setShowForm(false);
-        setJustSubmitted(true);
-        setTimeout(() => setJustSubmitted(false), 4000);
+        setFormEmail('');
+        // Show secret code modal
+        setSecretCodeModal({ show: true, code: newItem.secret_code, email: formEmail });
       }
     } catch (err) {
       console.error('Failed to submit:', err);
@@ -492,6 +499,17 @@ export default function Home() {
                 <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-700 to-transparent" />
               </div>
 
+              {/* Optional email */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  placeholder="E-posta (opsiyonel - bildirim icin)"
+                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/50"
+                />
+              </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-gray-600 text-sm">{newTruth.length}/500</span>
                 <div className="flex gap-3">
@@ -500,7 +518,7 @@ export default function Home() {
                     onClick={() => setShowForm(false)}
                     className="px-4 py-2 text-gray-500 hover:text-white transition-colors"
                   >
-                    Vazgeç
+                    Vazgec
                   </button>
                   <button
                     type="submit"
@@ -513,7 +531,7 @@ export default function Home() {
                         ...
                       </span>
                     ) : (
-                      'Paylaş'
+                      'Paylas'
                     )}
                   </button>
                 </div>
@@ -877,6 +895,78 @@ export default function Home() {
             >
               Kapat
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Secret Code Modal */}
+      {secretCodeModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+          <div className="max-w-md w-full glass-card rounded-2xl p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-medium text-white mb-2">Itirafin Paylasalidi!</h3>
+              <p className="text-gray-400 text-sm">Asagidaki kodu saklayarak itirafini yonetebilirsin</p>
+            </div>
+
+            <div className="bg-white/10 rounded-xl p-4 mb-6">
+              <div className="text-center">
+                <p className="text-xs text-gray-500 mb-2">Gizli Kodun</p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-2xl font-mono font-bold text-white tracking-widest">
+                    {secretCodeModal.code}
+                  </span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(secretCodeModal.code);
+                    }}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                    title="Kopyala"
+                  >
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-sm text-gray-400 mb-6">
+              <p>Bu kod ile:</p>
+              <ul className="space-y-1 ml-4">
+                <li>• Itirafina gelen yorumlari gorebilirsin</li>
+                <li>• Istatistiklerini takip edebilirsin</li>
+                <li>• Itirafini one cikarabilirsin</li>
+                <li>• Istersen itirafini silebilirsin</li>
+              </ul>
+            </div>
+
+            {secretCodeModal.email && (
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 mb-6 text-center">
+                <p className="text-green-400 text-sm">
+                  Bildirimler {secretCodeModal.email} adresine gonderilecek
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <a
+                href={`/yonet?kod=${secretCodeModal.code}`}
+                className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl font-medium text-center hover:shadow-lg hover:shadow-purple-500/25 transition-all"
+              >
+                Itirafimi Yonet
+              </a>
+              <button
+                onClick={() => setSecretCodeModal({ show: false, code: '', email: '' })}
+                className="px-6 py-3 bg-white/10 rounded-xl font-medium hover:bg-white/20 transition-colors"
+              >
+                Kapat
+              </button>
+            </div>
           </div>
         </div>
       )}
