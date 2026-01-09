@@ -43,9 +43,17 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!truthId || !boostDuration || !cardNumber || !cardExpMonth || !cardExpYear || !cardCvv || !cardHolderName) {
+    if (!truthId || !boostDuration || !cardNumber || !cardExpMonth || !cardExpYear || !cardCvv || !cardHolderName || !email) {
       return NextResponse.json(
         { error: 'Eksik bilgi' },
+        { status: 400 }
+      );
+    }
+
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { error: 'Gecersiz e-posta adresi' },
         { status: 400 }
       );
     }
@@ -109,9 +117,9 @@ export async function POST(request: NextRequest) {
 
     // Log payment attempt
     await pool.query(
-      `INSERT INTO payment_logs (order_id, truth_id, status, amount, currency, boost_duration, customer_ip, created_at)
-       VALUES ($1, $2, 'INITIATED', $3, 'TRY', $4, $5, NOW())`,
-      [orderId, truthId, price, boostDuration, clientIp]
+      `INSERT INTO payment_logs (order_id, truth_id, status, amount, currency, boost_duration, customer_ip, customer_email, created_at)
+       VALUES ($1, $2, 'INITIATED', $3, 'TRY', $4, $5, $6, NOW())`,
+      [orderId, truthId, price, boostDuration, clientIp, email]
     );
 
     return NextResponse.json({

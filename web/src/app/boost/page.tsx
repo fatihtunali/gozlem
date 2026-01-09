@@ -228,14 +228,18 @@ function BoostPageContent() {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-400 mb-2">E-posta (opsiyonel)</label>
+            <label className="block text-sm text-gray-400 mb-2">
+              E-posta <span className="text-amber-400">*</span>
+            </label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="ornek@email.com"
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-purple-500/50 transition-colors"
+              required
             />
+            <p className="text-xs text-gray-600 mt-1">Odeme bildirimi ve fatura icin gerekli</p>
           </div>
 
           {error && (
@@ -246,7 +250,7 @@ function BoostPageContent() {
 
           <button
             type="submit"
-            disabled={loading || !cardNumber || !cardExpMonth || !cardExpYear || !cardCvv || !cardHolderName}
+            disabled={loading || !cardNumber || !cardExpMonth || !cardExpYear || !cardCvv || !cardHolderName || !email}
             className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 rounded-2xl font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-amber-500/25 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
           >
             {loading ? (
