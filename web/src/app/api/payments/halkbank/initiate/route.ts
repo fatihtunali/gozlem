@@ -9,6 +9,9 @@ const BOOST_PRICES: Record<string, number> = {
   '24_hours': 49.99,
 };
 
+// Payment types
+type PaymentType = 'boost' | 'gift';
+
 function getClientIP(headers: Headers): string {
   const forwarded = headers.get('x-forwarded-for');
   if (forwarded) {
@@ -33,7 +36,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       truthId,
+      paymentType = 'boost' as PaymentType,
       boostDuration,
+      giftTypeId,
+      giftMessage,
       cardNumber,
       cardExpMonth,
       cardExpYear,
@@ -43,7 +49,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!truthId || !boostDuration || !cardNumber || !cardExpMonth || !cardExpYear || !cardCvv || !cardHolderName || !email) {
+    if (!truthId || !cardNumber || !cardExpMonth || !cardExpYear || !cardCvv || !cardHolderName || !email) {
       return NextResponse.json(
         { error: 'Eksik bilgi' },
         { status: 400 }
@@ -58,13 +64,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate boost duration
-    const price = BOOST_PRICES[boostDuration];
-    if (!price) {
-      return NextResponse.json(
-        { error: 'Gecersiz boost suresi' },
-        { status: 400 }
+    let price: number;
+    let orderId: string;
+    let orderDescription: string;
+
+    if (paymentType === 'gift') {
+      // Get gift price from database
+      if (!giftTypeId) {
+        return NextResponse.json({ error: 'Hediye tipi secilmedi' }, { status: 400 });
+      }
+
+      const giftResult = await pool.query(
+        'SELECT id, name, price FROM gift_types WHERE id = $1',
+        [giftTypeId]
       );
+
+      if (giftResult.rows.length === 0) {
+        return NextResponse.json({ error: 'Gecersiz hediye tipi' }, { status: 400 });
+      }
+
+      price = parseFloat(giftResult.rows[0].price);
+      orderId = `GIFT-${truthId.slice(0, 8)}-${Date.now()}`;
+      orderDescription = `Hediye: ${giftResult.rows[0].name}`;
+    } else {
+      // Boost payment
+      if (!boostDuration) {
+        return NextResponse.json({ error: 'Boost suresi secilmedi' }, { status: 400 });
+      }
+
+      price = BOOST_PRICES[boostDuration];
+      if (!price) {
+        return NextResponse.json({ error: 'Gecersiz boost suresi' }, { status: 400 });
+      }
+
+      orderId = `BOOST-${truthId.slice(0, 8)}-${Date.now()}`;
+      orderDescription = `Boost: ${boostDuration}`;
     }
 
     // Basic card validation
@@ -98,9 +132,6 @@ export async function POST(request: NextRequest) {
     // Get client IP
     const clientIp = getClientIP(request.headers);
 
-    // Generate unique order ID
-    const orderId = `BOOST-${truthId.slice(0, 8)}-${Date.now()}`;
-
     // Create 3D Secure form data
     const formData = create3DSecureForm({
       orderId,
@@ -115,11 +146,15 @@ export async function POST(request: NextRequest) {
       customerIp: clientIp,
     });
 
-    // Log payment attempt
+    // Log payment attempt with metadata
+    const metadata = paymentType === 'gift'
+      ? { paymentType: 'gift', giftTypeId, giftMessage }
+      : { paymentType: 'boost', boostDuration };
+
     await pool.query(
-      `INSERT INTO payment_logs (order_id, truth_id, status, amount, currency, boost_duration, customer_ip, customer_email, created_at)
-       VALUES ($1, $2, 'INITIATED', $3, 'TRY', $4, $5, $6, NOW())`,
-      [orderId, truthId, price, boostDuration, clientIp, email]
+      `INSERT INTO payment_logs (order_id, truth_id, status, amount, currency, boost_duration, customer_ip, customer_email, raw_response, created_at)
+       VALUES ($1, $2, 'INITIATED', $3, 'TRY', $4, $5, $6, $7, NOW())`,
+      [orderId, truthId, price, paymentType === 'boost' ? boostDuration : null, clientIp, email, JSON.stringify(metadata)]
     );
 
     return NextResponse.json({

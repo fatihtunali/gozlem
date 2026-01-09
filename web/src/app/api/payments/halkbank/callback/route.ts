@@ -42,9 +42,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.redirect(new URL('/?payment=error', APP_URL));
     }
 
+    // Determine payment type from order ID
+    const isGiftPayment = orderId.startsWith('GIFT-');
+
     // Find payment log
     const paymentResult = await pool.query(
-      'SELECT id, truth_id, amount, boost_duration FROM payment_logs WHERE order_id = $1 AND status = $2',
+      'SELECT id, truth_id, amount, boost_duration, raw_response FROM payment_logs WHERE order_id = $1 AND status = $2',
       [orderId, 'INITIATED']
     );
 
@@ -54,6 +57,9 @@ export async function POST(request: NextRequest) {
     }
 
     const paymentLog = paymentResult.rows[0];
+    const metadata = typeof paymentLog.raw_response === 'string'
+      ? JSON.parse(paymentLog.raw_response)
+      : paymentLog.raw_response || {};
 
     // Verify hash
     const isHashValid = verifyCallbackHash(params);
@@ -117,27 +123,55 @@ export async function POST(request: NextRequest) {
     );
 
     if (result.success) {
-      // Calculate boost end time
-      const boostHours = BOOST_HOURS[paymentLog.boost_duration] || 1;
-      const boostEndTime = new Date();
-      boostEndTime.setHours(boostEndTime.getHours() + boostHours);
+      if (isGiftPayment) {
+        // Handle gift payment
+        const giftTypeId = metadata.giftTypeId;
+        const giftMessage = metadata.giftMessage || null;
 
-      // Activate boost for the confession
-      await pool.query(
-        `INSERT INTO boosts (truth_id, order_id, boost_type, ends_at, created_at)
-         VALUES ($1, $2, $3, $4, NOW())`,
-        [paymentLog.truth_id, orderId, paymentLog.boost_duration, boostEndTime]
-      );
+        // Get gift price
+        const giftResult = await pool.query(
+          'SELECT price FROM gift_types WHERE id = $1',
+          [giftTypeId]
+        );
+        const giftPrice = giftResult.rows[0]?.price || 0;
 
-      // Update truth to mark as boosted
-      await pool.query(
-        'UPDATE truths SET is_boosted = true, boost_ends_at = $1 WHERE id = $2',
-        [boostEndTime, paymentLog.truth_id]
-      );
+        // Insert gift record
+        await pool.query(
+          `INSERT INTO gifts (truth_id, gift_type_id, message, payment_id, created_at)
+           VALUES ($1, $2, $3, $4, NOW())`,
+          [paymentLog.truth_id, giftTypeId, giftMessage, paymentLog.id]
+        );
 
-      console.log(`[Halkbank Callback] Payment successful for order ${orderId}, boost activated until ${boostEndTime}`);
+        // Update truth gift count and value
+        await pool.query(
+          `UPDATE truths SET gift_count = gift_count + 1, gift_value = gift_value + $1 WHERE id = $2`,
+          [giftPrice, paymentLog.truth_id]
+        );
 
-      return NextResponse.redirect(new URL('/?payment=success', APP_URL));
+        console.log(`[Halkbank Callback] Gift payment successful for order ${orderId}`);
+        return NextResponse.redirect(new URL('/?payment=success&type=gift', APP_URL));
+      } else {
+        // Handle boost payment
+        const boostHours = BOOST_HOURS[paymentLog.boost_duration] || 1;
+        const boostEndTime = new Date();
+        boostEndTime.setHours(boostEndTime.getHours() + boostHours);
+
+        // Activate boost for the confession
+        await pool.query(
+          `INSERT INTO boosts (truth_id, order_id, boost_type, ends_at, created_at)
+           VALUES ($1, $2, $3, $4, NOW())`,
+          [paymentLog.truth_id, orderId, paymentLog.boost_duration, boostEndTime]
+        );
+
+        // Update truth to mark as boosted
+        await pool.query(
+          'UPDATE truths SET is_boosted = true, boost_ends_at = $1 WHERE id = $2',
+          [boostEndTime, paymentLog.truth_id]
+        );
+
+        console.log(`[Halkbank Callback] Boost payment successful for order ${orderId}, boost activated until ${boostEndTime}`);
+        return NextResponse.redirect(new URL('/?payment=success', APP_URL));
+      }
     } else {
       console.log(`[Halkbank Callback] Payment failed for order ${orderId}: ${result.errorMessage}`);
       const errorMsg = encodeURIComponent(result.errorMessage || 'Odeme basarisiz');
@@ -175,9 +209,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/?payment=error', APP_URL));
   }
 
+  // Determine payment type from order ID
+  const isGiftPayment = orderId.startsWith('GIFT-');
+
   // Find payment log
   const paymentResult = await pool.query(
-    'SELECT id, truth_id, amount, boost_duration FROM payment_logs WHERE order_id = $1',
+    'SELECT id, truth_id, amount, boost_duration, raw_response FROM payment_logs WHERE order_id = $1',
     [orderId]
   );
 
@@ -186,6 +223,9 @@ export async function GET(request: NextRequest) {
   }
 
   const paymentLog = paymentResult.rows[0];
+  const metadata = typeof paymentLog.raw_response === 'string'
+    ? JSON.parse(paymentLog.raw_response)
+    : paymentLog.raw_response || {};
 
   // Verify hash
   const isHashValid = verifyCallbackHash(params);
@@ -216,22 +256,47 @@ export async function GET(request: NextRequest) {
   );
 
   if (result.success) {
-    const boostHours = BOOST_HOURS[paymentLog.boost_duration] || 1;
-    const boostEndTime = new Date();
-    boostEndTime.setHours(boostEndTime.getHours() + boostHours);
+    if (isGiftPayment) {
+      // Handle gift payment
+      const giftTypeId = metadata.giftTypeId;
+      const giftMessage = metadata.giftMessage || null;
 
-    await pool.query(
-      `INSERT INTO boosts (truth_id, order_id, boost_type, ends_at, created_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [paymentLog.truth_id, orderId, paymentLog.boost_duration, boostEndTime]
-    );
+      const giftResult = await pool.query(
+        'SELECT price FROM gift_types WHERE id = $1',
+        [giftTypeId]
+      );
+      const giftPrice = giftResult.rows[0]?.price || 0;
 
-    await pool.query(
-      'UPDATE truths SET is_boosted = true, boost_ends_at = $1 WHERE id = $2',
-      [boostEndTime, paymentLog.truth_id]
-    );
+      await pool.query(
+        `INSERT INTO gifts (truth_id, gift_type_id, message, payment_id, created_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [paymentLog.truth_id, giftTypeId, giftMessage, paymentLog.id]
+      );
 
-    return NextResponse.redirect(new URL('/?payment=success', APP_URL));
+      await pool.query(
+        `UPDATE truths SET gift_count = gift_count + 1, gift_value = gift_value + $1 WHERE id = $2`,
+        [giftPrice, paymentLog.truth_id]
+      );
+
+      return NextResponse.redirect(new URL('/?payment=success&type=gift', APP_URL));
+    } else {
+      const boostHours = BOOST_HOURS[paymentLog.boost_duration] || 1;
+      const boostEndTime = new Date();
+      boostEndTime.setHours(boostEndTime.getHours() + boostHours);
+
+      await pool.query(
+        `INSERT INTO boosts (truth_id, order_id, boost_type, ends_at, created_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [paymentLog.truth_id, orderId, paymentLog.boost_duration, boostEndTime]
+      );
+
+      await pool.query(
+        'UPDATE truths SET is_boosted = true, boost_ends_at = $1 WHERE id = $2',
+        [boostEndTime, paymentLog.truth_id]
+      );
+
+      return NextResponse.redirect(new URL('/?payment=success', APP_URL));
+    }
   } else {
     const errorMsg = encodeURIComponent(result.errorMessage || 'Odeme basarisiz');
     return NextResponse.redirect(new URL(`/?payment=failed&error=${errorMsg}`, APP_URL));
