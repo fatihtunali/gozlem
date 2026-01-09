@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface Truth {
   id: string;
@@ -400,9 +402,10 @@ export default function Home() {
   };
 
   const displayTruths = searchResults || truths;
+  const { theme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-[#08080a] text-white overflow-x-hidden">
+    <div className={`min-h-screen overflow-x-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-[#08080a] text-white' : 'bg-slate-50 text-slate-900'}`}>
       {/* Gradient mesh background */}
       <div className="fixed inset-0 bg-gradient-mesh pointer-events-none" />
 
@@ -423,11 +426,16 @@ export default function Home() {
       {/* Main content */}
       <div className="relative z-10 max-w-3xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
-        <header className="text-center mb-8">
+        <header className="text-center mb-8 relative">
+          {/* Theme toggle - positioned top right */}
+          <div className="absolute top-0 right-0">
+            <ThemeToggle />
+          </div>
+
           <h1 className="text-3xl md:text-4xl font-extralight tracking-wide mb-3 animate-fade-in">
             haydi hep beraber
           </h1>
-          <p className="text-gray-500 animate-fade-in animation-delay-200">
+          <p className={`animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'}`}>
             Kimseye söyleyemediğin şeyi buraya bırak.
           </p>
 

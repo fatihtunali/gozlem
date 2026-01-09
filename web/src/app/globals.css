@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
-:root {
+/* Dark theme (default) */
+:root,
+.dark {
   --background: #08080a;
   --foreground: #ffffff;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.05);
+  --card-hover-bg: rgba(255, 255, 255, 0.05);
+  --card-hover-border: rgba(255, 255, 255, 0.1);
+  --muted: #6b7280;
+  --muted-foreground: #9ca3af;
+  --accent: #9333ea;
+  --accent-hover: #a855f7;
+  --surface: #111113;
+  --surface-hover: #1a1a1c;
+}
+
+/* Light theme */
+.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-bg: rgba(255, 255, 255, 0.8);
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-hover-bg: rgba(255, 255, 255, 0.95);
+  --card-hover-border: rgba(0, 0, 0, 0.12);
+  --muted: #64748b;
+  --muted-foreground: #475569;
+  --accent: #7c3aed;
+  --accent-hover: #8b5cf6;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
 }
 
 @theme inline {
@@ -16,6 +44,7 @@ body {
   color: var(--foreground);
   font-family: system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom scrollbar */
@@ -47,17 +76,26 @@ body {
 
 /* Glassmorphism card */
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--card-border);
   transition: all 0.3s ease;
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: var(--card-hover-bg);
+  border-color: var(--card-hover-border);
   box-shadow: 0 8px 32px rgba(139, 92, 246, 0.1);
+}
+
+/* Light theme adjustments */
+.light .glass-card {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.light .glass-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 /* Noise texture */

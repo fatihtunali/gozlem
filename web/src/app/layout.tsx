@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -45,10 +46,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
-      <body className={`${geist.variable} font-sans antialiased bg-[#0a0a0b]`}>
-        <ServiceWorkerRegistration />
-        {children}
+    <html lang="tr" suppressHydrationWarning>
+      <body className={`${geist.variable} font-sans antialiased`}>
+        <ThemeProvider>
+          <ServiceWorkerRegistration />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
