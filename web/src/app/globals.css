@@ -180,6 +180,72 @@ body {
   color: #8b5cf6 !important;
 }
 
+/* Light theme - card content */
+.light .glass-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.light .glass-card p,
+.light .glass-card span,
+.light .glass-card div {
+  color: #1e293b;
+}
+
+.light .glass-card .text-gray-400,
+.light .glass-card .text-gray-500 {
+  color: #64748b !important;
+}
+
+/* Buttons in light mode */
+.light button {
+  color: inherit;
+}
+
+.light .bg-purple-500\/20 {
+  background-color: rgba(139, 92, 246, 0.15) !important;
+}
+
+.light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Form elements */
+.light .bg-\[var\(--background\)\] {
+  background-color: #f8fafc !important;
+}
+
+/* Category pills */
+.light .from-purple-500,
+.light .from-pink-500,
+.light .from-gray-500,
+.light .from-blue-500,
+.light .from-amber-500,
+.light .from-emerald-500 {
+  color: white !important;
+}
+
+/* Specific text fixes */
+.light h1, .light h2, .light h3, .light h4 {
+  color: #0f172a !important;
+}
+
+.light .text-2xl,
+.light .text-xl,
+.light .text-lg {
+  color: #1e293b !important;
+}
+
+/* Comment section */
+.light .rounded-xl.bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Trending hashtags */
+.light .flex-shrink-0.px-3 {
+  color: #475569 !important;
+}
+
 /* Noise texture */
 .bg-noise {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
