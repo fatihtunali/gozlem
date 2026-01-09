@@ -188,7 +188,7 @@ export default function Home() {
       <div className="fixed inset-0 opacity-20 pointer-events-none bg-noise" />
 
       {/* Main content */}
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 md:py-12">
+      <div className="relative z-10 max-w-3xl mx-auto px-4 py-8 md:py-12">
         {/* Header */}
         <header className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-extralight tracking-wide mb-3 animate-fade-in">
@@ -358,7 +358,7 @@ export default function Home() {
 
         {/* Truths list */}
         {!loading && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {truths.map((truth) => {
               const catInfo = getCategoryInfo(truth.category);
               const isVoting = votingId === truth.id;
