@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Generator</title>
+</head>
+<body>
+  <canvas id="canvas192" width="192" height="192"></canvas>
+  <canvas id="canvas512" width="512" height="512"></canvas>
+  <canvas id="canvas72" width="72" height="72"></canvas>
+  <script>
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#9333ea');
+      gradient.addColorStop(1, '#7c3aed');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Heart shape
+      ctx.fillStyle = '#ffffff';
+      ctx.save();
+      ctx.translate(size/2, size/2.2);
+      const heartSize = size * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(0, heartSize * 0.3);
+      ctx.bezierCurveTo(-heartSize * 0.5, -heartSize * 0.3, -heartSize, heartSize * 0.1, 0, heartSize);
+      ctx.bezierCurveTo(heartSize, heartSize * 0.1, heartSize * 0.5, -heartSize * 0.3, 0, heartSize * 0.3);
+      ctx.fill();
+      ctx.restore();
+    }
+    
+    drawIcon(document.getElementById('canvas192'), 192);
+    drawIcon(document.getElementById('canvas512'), 512);
+    drawIcon(document.getElementById('canvas72'), 72);
+    
+    // Convert to PNG and show links
+    setTimeout(() => {
+      console.log('192x192:', document.getElementById('canvas192').toDataURL('image/png'));
+      console.log('512x512:', document.getElementById('canvas512').toDataURL('image/png'));
+      console.log('72x72:', document.getElementById('canvas72').toDataURL('image/png'));
+    }, 100);
+  </script>
+</body>
+</html>

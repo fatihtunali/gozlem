@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 import pool from '@/lib/db';
 import { sendCommentNotification } from '@/lib/email';
 import { moderateContent, shouldAutoHide } from '@/lib/moderation';
+import { sendPushToTruthOwner } from '@/lib/push';
 
 function hashIP(ip: string): string {
   return createHash('sha256').update(ip + (process.env.IP_SALT || 'default-salt')).digest('hex').slice(0, 16);
@@ -105,6 +106,13 @@ export async function POST(
         truth.secret_code
       ).catch(err => console.error('Failed to send comment notification:', err));
     }
+
+    // Send push notification to truth owner
+    sendPushToTruthOwner(id, {
+      title: 'Yeni Yorum',
+      body: content.length > 50 ? content.slice(0, 47) + '...' : content,
+      url: `/?highlight=${id}`,
+    }).catch(err => console.error('Failed to send push notification:', err));
 
     return NextResponse.json(result.rows[0], { status: 201 });
   } catch (error) {

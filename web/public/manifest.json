@@ -1,27 +1,25 @@
 {
-  "name": "Haydi Hep Beraber",
-  "short_name": "İtiraf",
-  "description": "Anonim itiraf duvarı - Kimseye söyleyemediğin şeyi buraya bırak",
+  "name": "haydi hep beraber",
+  "short_name": "itiraf",
+  "description": "Anonim itiraf platformu - icini dokmek icin guvenli alan",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#08080a",
-  "theme_color": "#8b5cf6",
+  "theme_color": "#9333ea",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable any"
     }
   ],
-  "categories": ["social", "lifestyle"],
-  "lang": "tr",
-  "dir": "ltr"
+  "categories": ["social", "lifestyle"]
 }

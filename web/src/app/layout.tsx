@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 const geist = Geist({
   variable: "--font-geist",
@@ -46,6 +47,7 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className={`${geist.variable} font-sans antialiased bg-[#0a0a0b]`}>
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
