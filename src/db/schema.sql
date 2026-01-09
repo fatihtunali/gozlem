@@ -47,20 +47,13 @@ CREATE INDEX IF NOT EXISTS idx_idempotency_created ON idempotency_keys(created_a
 CREATE TABLE IF NOT EXISTS truths (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   content TEXT NOT NULL,
-  category VARCHAR(20) NOT NULL DEFAULT 'itiraf',
   me_too_count INTEGER NOT NULL DEFAULT 0,
   ip_hash VARCHAR(64),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  is_visible BOOLEAN NOT NULL DEFAULT TRUE,
-  is_featured BOOLEAN NOT NULL DEFAULT FALSE
+  is_visible BOOLEAN NOT NULL DEFAULT TRUE
 );
 
-CREATE INDEX IF NOT EXISTS idx_truths_created ON truths(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_truths_me_too ON truths(me_too_count DESC);
-CREATE INDEX IF NOT EXISTS idx_truths_category ON truths(category);
-CREATE INDEX IF NOT EXISTS idx_truths_featured ON truths(is_featured) WHERE is_featured = TRUE;
-
--- Add category column if not exists (for migration)
+-- Add new columns if not exists (for migration)
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'truths' AND column_name = 'category') THEN
@@ -70,6 +63,11 @@ BEGIN
     ALTER TABLE truths ADD COLUMN is_featured BOOLEAN NOT NULL DEFAULT FALSE;
   END IF;
 END $$;
+
+CREATE INDEX IF NOT EXISTS idx_truths_created ON truths(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_truths_me_too ON truths(me_too_count DESC);
+CREATE INDEX IF NOT EXISTS idx_truths_category ON truths(category);
+CREATE INDEX IF NOT EXISTS idx_truths_featured ON truths(is_featured) WHERE is_featured = TRUE;
 
 -- Me too votes (to prevent duplicate voting)
 CREATE TABLE IF NOT EXISTS me_too_votes (
