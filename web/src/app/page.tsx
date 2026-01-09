@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import ThemeToggle from '@/components/ThemeToggle';
-import { useTheme } from '@/contexts/ThemeContext';
+import dynamic from 'next/dynamic';
+
+const ThemeToggle = dynamic(() => import('@/components/ThemeToggle'), { ssr: false });
 
 interface Truth {
   id: string;
@@ -402,10 +403,9 @@ export default function Home() {
   };
 
   const displayTruths = searchResults || truths;
-  const { theme } = useTheme();
 
   return (
-    <div className={`min-h-screen overflow-x-hidden transition-colors duration-300 ${theme === 'dark' ? 'bg-[#08080a] text-white' : 'bg-slate-50 text-slate-900'}`}>
+    <div className="min-h-screen overflow-x-hidden transition-colors duration-300 bg-[var(--background)] text-[var(--foreground)]">
       {/* Gradient mesh background */}
       <div className="fixed inset-0 bg-gradient-mesh pointer-events-none" />
 
@@ -435,7 +435,7 @@ export default function Home() {
           <h1 className="text-3xl md:text-4xl font-extralight tracking-wide mb-3 animate-fade-in">
             haydi hep beraber
           </h1>
-          <p className={`animate-fade-in animation-delay-200 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'}`}>
+          <p className="animate-fade-in animation-delay-200 text-[var(--muted)]">
             Kimseye söyleyemediğin şeyi buraya bırak.
           </p>
 
