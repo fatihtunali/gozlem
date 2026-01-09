@@ -426,7 +426,7 @@ export default function Home() {
         {/* Header */}
         <header className="text-center mb-8 relative">
           {/* Theme toggle - positioned top right */}
-          <div className="absolute top-0 right-0">
+          <div className="absolute top-0 right-0 z-50">
             <ThemeToggle />
           </div>
 

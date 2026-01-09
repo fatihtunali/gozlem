@@ -43,7 +43,7 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
   // Don't render anything until mounted to avoid hydration mismatch
   if (!mounted) {
     return (
-      <button className={`p-2 rounded-lg bg-gray-800 ${className}`}>
+      <button className={`p-3 rounded-xl bg-gray-800 shadow-lg ${className}`}>
         <Sun className="w-5 h-5 text-yellow-400" />
       </button>
     );
@@ -52,12 +52,14 @@ export default function ThemeToggle({ className = '' }: ThemeToggleProps) {
   return (
     <button
       onClick={toggleTheme}
-      className={`p-2 rounded-lg transition-colors ${
+      type="button"
+      className={`p-3 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
         theme === 'dark'
-          ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700'
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ? 'bg-gray-800 text-yellow-400 hover:bg-gray-700 shadow-lg'
+          : 'bg-white text-gray-700 hover:bg-gray-100 shadow-md border border-gray-200'
       } ${className}`}
       aria-label={theme === 'dark' ? 'Aydinlik tema' : 'Karanlik tema'}
+      style={{ touchAction: 'manipulation' }}
     >
       {theme === 'dark' ? (
         <Sun className="w-5 h-5" />
