@@ -1,7 +1,12 @@
 # Haydi Hep Beraber - Mobil Uygulama Plani
 
+## Gelistirme Ortami
+- **IDE:** Android Studio
+- **Test:** Lokal emulator + fiziksel cihaz
+- **Yayin:** Test tamamlandiktan sonra tek seferde
+
 ## Teknoloji Stack
-- **Framework:** React Native + Expo
+- **Framework:** React Native + Expo (Development Build)
 - **Dil:** TypeScript
 - **State Management:** Zustand
 - **Navigation:** Expo Router
@@ -142,6 +147,27 @@ POST   /api/push/subscribe      # Push bildirim kayit
 - [ ] Store gorselleri
 - [ ] Aciklama metinleri
 
+## Android Studio Kurulumu
+
+### Gereksinimler
+1. Android Studio (son surum)
+2. Node.js 18+
+3. JDK 17
+4. Android SDK (API 33+)
+
+### Ortam Degiskenleri (Windows)
+```
+ANDROID_HOME = C:\Users\{USER}\AppData\Local\Android\Sdk
+JAVA_HOME = C:\Program Files\Android\Android Studio\jbr
+Path += %ANDROID_HOME%\platform-tools
+```
+
+### Emulator Ayarlari
+- Device: Pixel 7 veya benzer
+- API Level: 33 (Android 13)
+- RAM: 2048 MB
+- VM Heap: 512 MB
+
 ## Komutlar
 
 ```bash
@@ -150,16 +176,61 @@ npx create-expo-app mobile --template expo-template-blank-typescript
 
 # Bagimliliklari kurma
 cd mobile
-npx expo install expo-router react-native-safe-area-context react-native-screens
+npx expo install expo-router react-native-safe-area-context react-native-screens expo-dev-client
 npm install nativewind tailwindcss zustand axios
 npm install @expo/vector-icons expo-notifications expo-device
 
-# Calistirma
-npx expo start
+# Android Studio ile calistirma
+npx expo run:android
 
-# Build
-eas build --platform ios
-eas build --platform android
+# Development build olusturma (lokal test icin)
+npx expo prebuild --platform android
+# Sonra Android Studio'da mobile/android klasorunu ac
+
+# Lokal APK build
+cd android
+./gradlew assembleRelease
+
+# Final build (yayin icin)
+eas build --platform android --profile production
+eas build --platform ios --profile production
+```
+
+## Lokal Test Adimlari
+
+1. **Emulator Baslat**
+   - Android Studio → Device Manager → Play
+
+2. **Expo Dev Server Baslat**
+   ```bash
+   cd mobile
+   npx expo start
+   ```
+
+3. **Android'de Calistir**
+   - Terminal'de `a` tusuna bas
+   - veya `npx expo run:android`
+
+4. **Fiziksel Cihaz Testi**
+   - USB debugging ac
+   - `adb devices` ile kontrol et
+   - `npx expo run:android --device`
+
+## APK/AAB Olusturma (Lokal)
+
+```bash
+# Debug APK
+cd mobile/android
+./gradlew assembleDebug
+# Output: android/app/build/outputs/apk/debug/app-debug.apk
+
+# Release APK (imzali)
+./gradlew assembleRelease
+# Output: android/app/build/outputs/apk/release/app-release.apk
+
+# AAB (Play Store icin)
+./gradlew bundleRelease
+# Output: android/app/build/outputs/bundle/release/app-release.aab
 ```
 
 ## Store Bilgileri (Hazirlanacak)
