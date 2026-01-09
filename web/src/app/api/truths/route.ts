@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
     const [truthsResult, countResult, statsResult] = await Promise.all([
       pool.query(
-        `SELECT id, content, category, me_too_count, created_at, is_featured
+        `SELECT id, content, category, me_too_count, COALESCE(hug_count, 0) as hug_count, created_at, is_featured
          FROM truths
          WHERE ${whereClause}
          ORDER BY ${orderBy}

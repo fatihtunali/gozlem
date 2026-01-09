@@ -11,11 +11,25 @@ export const metadata: Metadata = {
   title: "haydi hep beraber - itiraf duvarı",
   description: "Kimseye söyleyemediğin şeyi buraya bırak. Yalnız değilsin.",
   keywords: ["itiraf", "anonim", "sır", "paylaşım", "türkiye"],
+  manifest: "/manifest.json",
+  themeColor: "#8b5cf6",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "İtiraf",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
   openGraph: {
     title: "haydi hep beraber",
     description: "Kimseye söyleyemediğin şeyi buraya bırak. Yalnız değilsin.",
     type: "website",
     locale: "tr_TR",
+    url: "https://haydihepberaber.com",
   },
   twitter: {
     card: "summary_large_image",

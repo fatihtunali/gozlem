@@ -79,3 +79,47 @@ CREATE TABLE IF NOT EXISTS me_too_votes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_me_too_truth ON me_too_votes(truth_id);
+
+-- Add hug_count column if not exists
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'truths' AND column_name = 'hug_count') THEN
+    ALTER TABLE truths ADD COLUMN hug_count INTEGER NOT NULL DEFAULT 0;
+  END IF;
+END $$;
+
+-- Hug votes table
+CREATE TABLE IF NOT EXISTS hug_votes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  truth_id UUID NOT NULL REFERENCES truths(id) ON DELETE CASCADE,
+  voter_hash VARCHAR(64) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(truth_id, voter_hash)
+);
+
+CREATE INDEX IF NOT EXISTS idx_hug_truth ON hug_votes(truth_id);
+
+-- Comments table
+CREATE TABLE IF NOT EXISTS comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  truth_id UUID NOT NULL REFERENCES truths(id) ON DELETE CASCADE,
+  content VARCHAR(150) NOT NULL,
+  ip_hash VARCHAR(64),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  is_visible BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE INDEX IF NOT EXISTS idx_comments_truth ON comments(truth_id);
+CREATE INDEX IF NOT EXISTS idx_comments_created ON comments(created_at DESC);
+
+-- Daily themes table
+CREATE TABLE IF NOT EXISTS daily_themes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  theme_date DATE NOT NULL UNIQUE,
+  title VARCHAR(100) NOT NULL,
+  description VARCHAR(200),
+  category VARCHAR(20),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_themes_date ON daily_themes(theme_date DESC);
