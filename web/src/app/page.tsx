@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import dynamic from 'next/dynamic';
-
-const ThemeToggle = dynamic(() => import('@/components/ThemeToggle'), { ssr: false });
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface Truth {
   id: string;
