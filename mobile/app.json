@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.haydihepberaber.app"
+      "bundleIdentifier": "com.haydihepberaber.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -49,7 +52,11 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "341e23dd-4164-467c-b6d8-3967963d4520"
       }
-    }
+    },
+    "owner": "fatihtunali"
   }
 }
