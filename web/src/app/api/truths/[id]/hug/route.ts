@@ -32,13 +32,16 @@ export async function POST(
       'INSERT INTO hug_votes (truth_id, voter_hash) VALUES ($1, $2)',
       [id, voterHash]
     );
-    await pool.query(
-      'UPDATE truths SET hug_count = hug_count + 1 WHERE id = $1',
+    const result = await pool.query(
+      'UPDATE truths SET hug_count = hug_count + 1 WHERE id = $1 RETURNING hug_count',
       [id]
     );
     await pool.query('COMMIT');
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      hug_count: result.rows[0].hug_count
+    });
   } catch (error) {
     await pool.query('ROLLBACK');
     console.error('Failed to hug:', error);
