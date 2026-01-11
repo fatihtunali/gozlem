@@ -459,6 +459,28 @@ export default function Home() {
           </div>
         </header>
 
+        {/* Beta Test Banner */}
+        <div className="mb-4 animate-fade-in">
+          <a
+            href="https://groups.google.com/g/haydihepberaber-test"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block glass-card rounded-2xl p-4 border border-green-500/30 bg-gradient-to-r from-green-900/20 to-emerald-900/20 hover:from-green-900/30 hover:to-emerald-900/30 transition-all duration-300 group"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl group-hover:scale-110 transition-transform">🚀</span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-green-300">Android Beta Test</span>
+                  <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-300 rounded-full">Yeni</span>
+                </div>
+                <div className="text-sm text-gray-400">Uygulamamızı test et, geri bildirim ver!</div>
+              </div>
+              <span className="text-green-400 group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+          </a>
+        </div>
+
         {/* Daily theme banner */}
         {dailyTheme && (
           <div className="mb-6 animate-fade-in">
